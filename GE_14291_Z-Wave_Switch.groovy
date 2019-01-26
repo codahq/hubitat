@@ -44,50 +44,50 @@
  *    (1) Added isStateChange:true to physical and digital event generation, to create events regardless of state change
  */
 metadata {
-	definition (name: "GE/Jasco Z-Wave Plus On/Off Switch", namespace: "nuttytree", author: "Chris Nussbaum") {
-		capability "Actuator"
-		capability "PushableButton"
-		capability "Configuration"
-		capability "Indicator"
-		capability "Polling"
-		capability "Refresh"
-		capability "Sensor"
-		capability "Switch"
+    definition(name: "GE/Jasco Z-Wave Plus On/Off Switch", namespace: "nuttytree", author: "Chris Nussbaum") {
+        capability "Actuator"
+        capability "PushableButton"
+        capability "Configuration"
+        capability "Indicator"
+        capability "Polling"
+        capability "Refresh"
+        capability "Sensor"
+        capability "Switch"
 
-		attribute "inverted", "enum", ["inverted", "not inverted"]
-        
+        attribute "inverted", "enum", ["inverted", "not inverted"]
+
         command "doubleUp"
         command "doubleDown"
         command "inverted"
         command "notInverted"
-        
+
         // These include version because there are older firmwares that don't support double-tap or the extra association groups
-		fingerprint mfr:"0063", prod:"4952", model: "3036", ver: "5.20", deviceJoinName: "GE Z-Wave Plus Wall Switch"
-		fingerprint mfr:"0063", prod:"4952", model: "3037", ver: "5.20", deviceJoinName: "GE Z-Wave Plus Toggle Switch"
-		fingerprint mfr:"0063", prod:"4952", model: "3038", ver: "5.20", deviceJoinName: "GE Z-Wave Plus Toggle Switch"
-		fingerprint mfr:"0063", prod:"4952", model: "3130", ver: "5.20", deviceJoinName: "Jasco Z-Wave Plus Wall Switch"
-		fingerprint mfr:"0063", prod:"4952", model: "3131", ver: "5.20", deviceJoinName: "Jasco Z-Wave Plus Toggle Switch"
-		fingerprint mfr:"0063", prod:"4952", model: "3132", ver: "5.20", deviceJoinName: "Jasco Z-Wave Plus Toggle Switch"
-	}
+        fingerprint mfr: "0063", prod: "4952", model: "3036", ver: "5.20", deviceJoinName: "GE Z-Wave Plus Wall Switch"
+        fingerprint mfr: "0063", prod: "4952", model: "3037", ver: "5.20", deviceJoinName: "GE Z-Wave Plus Toggle Switch"
+        fingerprint mfr: "0063", prod: "4952", model: "3038", ver: "5.20", deviceJoinName: "GE Z-Wave Plus Toggle Switch"
+        fingerprint mfr: "0063", prod: "4952", model: "3130", ver: "5.20", deviceJoinName: "Jasco Z-Wave Plus Wall Switch"
+        fingerprint mfr: "0063", prod: "4952", model: "3131", ver: "5.20", deviceJoinName: "Jasco Z-Wave Plus Toggle Switch"
+        fingerprint mfr: "0063", prod: "4952", model: "3132", ver: "5.20", deviceJoinName: "Jasco Z-Wave Plus Toggle Switch"
+    }
 
     preferences {
-        input (
+        input(
             type: "paragraph",
             element: "paragraph",
             title: "Configure Association Groups:",
             description: "Devices in association group 2 will receive Basic Set commands directly from the switch when it is turned on or off. Use this to control another device as if it was connected to this switch.\n\n" +
-                         "Devices in association group 3 will receive Basic Set commands directly from the switch when it is double tapped up or down.\n\n" +
-                         "Devices are entered as a comma delimited list of IDs in hexadecimal format."
+            "Devices in association group 3 will receive Basic Set commands directly from the switch when it is double tapped up or down.\n\n" +
+            "Devices are entered as a comma delimited list of IDs in hexadecimal format."
         )
 
-        input (
+        input(
             name: "requestedGroup2",
             title: "Association Group 2 Members (Max of 5):",
             type: "text",
             required: false
         )
 
-        input (
+        input(
             name: "requestedGroup3",
             title: "Association Group 3 Members (Max of 4):",
             type: "text",
@@ -107,52 +107,52 @@ def parse(String description) {
     } else {
         log.debug "Non-parsed event: ${description}"
     }
-    result    
+    result
 }
 
 def zwaveEvent(hubitat.zwave.commands.crc16encapv1.Crc16Encap cmd) {
-	log.debug("zwaveEvent(): CRC-16 Encapsulation Command received: ${cmd}")
-	def encapsulatedCommand = zwave.commandClass(cmd.commandClass)?.command(cmd.command)?.parse(cmd.data)
+    log.debug("zwaveEvent(): CRC-16 Encapsulation Command received: ${cmd}")
+    def encapsulatedCommand = zwave.commandClass(cmd.commandClass) ?.command(cmd.command) ?.parse(cmd.data)
 	if (!encapsulatedCommand) {
-		log.debug("zwaveEvent(): Could not extract command from ${cmd}")
-	} else {
-		return zwaveEvent(encapsulatedCommand)
-	}
+        log.debug("zwaveEvent(): Could not extract command from ${cmd}")
+    } else {
+        return zwaveEvent(encapsulatedCommand)
+    }
 }
 
 def zwaveEvent(hubitat.zwave.commands.basicv1.BasicReport cmd) {
     log.debug "---BASIC REPORT V1--- ${device.displayName} sent ${cmd}"
-	// createEvent(name: "switch", value: cmd.value ? "on" : "off", type: "digital")
-	createEvent(name: "switch", value: cmd.value ? "on" : "off", isStateChange: true, type: "digital")
+    // createEvent(name: "switch", value: cmd.value ? "on" : "off", type: "digital")
+    createEvent(name: "switch", value: cmd.value ? "on" : "off", isStateChange: true, type: "digital")
 }
 
 def zwaveEvent(hubitat.zwave.commands.basicv1.BasicSet cmd) {
     log.debug "---BASIC SET V1--- ${device.displayName} sent ${cmd}"
-	if (cmd.value == 255) {
-    	createEvent(name: "pushed", value: 1, descriptionText: "Double-tap up (button 1) on $device.displayName", isStateChange: true, type: "physical")
+    if (cmd.value == 255) {
+        createEvent(name: "pushed", value: 1, descriptionText: "Double-tap up (button 1) on $device.displayName", isStateChange: true, type: "physical")
     }
-	else if (cmd.value == 0) {
-    	createEvent(name: "pushed", value: 2, descriptionText: "Double-tap down (button 2) on $device.displayName", isStateChange: true, type: "physical")
+    else if (cmd.value == 0) {
+        createEvent(name: "pushed", value: 2, descriptionText: "Double-tap down (button 2) on $device.displayName", isStateChange: true, type: "physical")
     }
 }
 
 def zwaveEvent(hubitat.zwave.commands.associationv2.AssociationReport cmd) {
-	log.debug "---ASSOCIATION REPORT V2--- ${device.displayName} sent groupingIdentifier: ${cmd.groupingIdentifier} maxNodesSupported: ${cmd.maxNodesSupported} nodeId: ${cmd.nodeId} reportsToFollow: ${cmd.reportsToFollow}"
+    log.debug "---ASSOCIATION REPORT V2--- ${device.displayName} sent groupingIdentifier: ${cmd.groupingIdentifier} maxNodesSupported: ${cmd.maxNodesSupported} nodeId: ${cmd.nodeId} reportsToFollow: ${cmd.reportsToFollow}"
     if (cmd.groupingIdentifier == 3) {
-    	if (cmd.nodeId.toString().contains(zwaveHubNodeId.toString())) {
-        	createEvent(name: "numberOfButtons", value: 2, displayed: false)
+        if (cmd.nodeId.toString().contains(zwaveHubNodeId.toString())) {
+            createEvent(name: "numberOfButtons", value: 2, displayed: false)
         }
         else {
-			sendHubCommand(new hubitat.device.HubAction(zwave.associationV2.associationSet(groupingIdentifier: 3, nodeId: zwaveHubNodeId).format()))
-			sendHubCommand(new hubitat.device.HubAction(zwave.associationV2.associationGet(groupingIdentifier: 3).format()))
-        	createEvent(name: "numberOfButtons", value: 0, displayed: false)
+            sendHubCommand(new hubitat.device.HubAction(zwave.associationV2.associationSet(groupingIdentifier: 3, nodeId: zwaveHubNodeId).format()))
+            sendHubCommand(new hubitat.device.HubAction(zwave.associationV2.associationGet(groupingIdentifier: 3).format()))
+            createEvent(name: "numberOfButtons", value: 0, displayed: false)
         }
     }
 }
 
 def zwaveEvent(hubitat.zwave.commands.configurationv2.ConfigurationReport cmd) {
     log.debug "---CONFIGURATION REPORT V2--- ${device.displayName} sent ${cmd}"
-	def name = ""
+    def name = ""
     def value = ""
     def reportValue = cmd.configurationValue[0]
     switch (cmd.parameterNumber) {
@@ -167,31 +167,31 @@ def zwaveEvent(hubitat.zwave.commands.configurationv2.ConfigurationReport cmd) {
         default:
             break
     }
-	createEvent([name: name, value: value, displayed: false])
+    createEvent([name: name, value: value, displayed: false])
 }
 
 def zwaveEvent(hubitat.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd) {
     log.debug "---BINARY SWITCH REPORT V1--- ${device.displayName} sent ${cmd}"
     // createEvent(name: "switch", value: cmd.value ? "on" : "off", type: "physical")
-	createEvent(name: "switch", value: cmd.value ? "on" : "off", isStateChange: true, type: "physical")
+    createEvent(name: "switch", value: cmd.value ? "on" : "off", isStateChange: true, type: "physical")
 }
 
 def zwaveEvent(hubitat.zwave.commands.manufacturerspecificv2.ManufacturerSpecificReport cmd) {
     log.debug "---MANUFACTURER SPECIFIC REPORT V2---"
-	log.debug "manufacturerId:   ${cmd.manufacturerId}"
-	log.debug "manufacturerName: ${cmd.manufacturerName}"
-    state.manufacturer=cmd.manufacturerName
-	log.debug "productId:        ${cmd.productId}"
-	log.debug "productTypeId:    ${cmd.productTypeId}"
-	def msr = String.format("%04X-%04X-%04X", cmd.manufacturerId, cmd.productTypeId, cmd.productId)
-	updateDataValue("MSR", msr)	
+    log.debug "manufacturerId:   ${cmd.manufacturerId}"
+    log.debug "manufacturerName: ${cmd.manufacturerName}"
+    state.manufacturer = cmd.manufacturerName
+    log.debug "productId:        ${cmd.productId}"
+    log.debug "productTypeId:    ${cmd.productTypeId}"
+    def msr = String.format("%04X-%04X-%04X", cmd.manufacturerId, cmd.productTypeId, cmd.productId)
+    updateDataValue("MSR", msr)
     createEvent([descriptionText: "$device.displayName MSR: $msr", isStateChange: false])
 }
 
 def zwaveEvent(hubitat.zwave.commands.versionv1.VersionReport cmd) {
-	def fw = "${cmd.applicationVersion}.${cmd.applicationSubVersion}"
-	updateDataValue("fw", fw)
-	log.debug "---VERSION REPORT V1--- ${device.displayName} is running firmware version: $fw, Z-Wave version: ${cmd.zWaveProtocolVersion}.${cmd.zWaveProtocolSubVersion}"
+    def fw = "${cmd.applicationVersion}.${cmd.applicationSubVersion}"
+    updateDataValue("fw", fw)
+    log.debug "---VERSION REPORT V1--- ${device.displayName} is running firmware version: $fw, Z-Wave version: ${cmd.zWaveProtocolVersion}.${cmd.zWaveProtocolSubVersion}"
 }
 
 
@@ -205,22 +205,22 @@ def configure() {
     // Get current config parameter values
     cmds << zwave.configurationV2.configurationGet(parameterNumber: 3).format()
     cmds << zwave.configurationV2.configurationGet(parameterNumber: 4).format()
-    
+
     // Add the hub to association group 3 to get double-tap notifications
     cmds << zwave.associationV2.associationSet(groupingIdentifier: 3, nodeId: zwaveHubNodeId).format()
     cmds << zwave.associationV2.associationGet(groupingIdentifier: 3).format()
-    
-    delayBetween(cmds,500)
+
+    delayBetween(cmds, 500)
 }
 
 def updated() {
     if (state.lastUpdated && now() <= state.lastUpdated + 3000) return
     state.lastUpdated = now()
 
-	def nodes = []
+    def nodes = []
     def cmds = []
 
-	if (settings.requestedGroup2 != state.currentGroup2) {
+    if (settings.requestedGroup2 != state.currentGroup2) {
         nodes = parseAssocGroupList(settings.requestedGroup2, 2)
         cmds << zwave.associationV2.associationRemove(groupingIdentifier: 2, nodeId: [])
         cmds << zwave.associationV2.associationSet(groupingIdentifier: 2, nodeId: nodes)
@@ -236,75 +236,75 @@ def updated() {
         state.currentGroup3 = settings.requestedGroup3
     }
 
-	sendHubCommand(cmds.collect{ new hubitat.device.HubAction(it.format()) }, 500)
+    sendHubCommand(cmds.collect{ new hubitat.device.HubAction(it.format()) }, 500)
 }
 
 def indicatorWhenOn() {
-	sendEvent(name: "indicatorStatus", value: "when on", display: false)
-	sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [1], parameterNumber: 3, size: 1).format()))
+    sendEvent(name: "indicatorStatus", value: "when on", display: false)
+    sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [1], parameterNumber: 3, size: 1).format()))
 }
 
 def indicatorWhenOff() {
-	sendEvent(name: "indicatorStatus", value: "when off", display: false)
-	sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [0], parameterNumber: 3, size: 1).format()))
+    sendEvent(name: "indicatorStatus", value: "when off", display: false)
+    sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [0], parameterNumber: 3, size: 1).format()))
 }
 
 def indicatorNever() {
-	sendEvent(name: "indicatorStatus", value: "never", display: false)
-	sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [2], parameterNumber: 3, size: 1).format()))
+    sendEvent(name: "indicatorStatus", value: "never", display: false)
+    sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [2], parameterNumber: 3, size: 1).format()))
 }
 
 def inverted() {
-	sendEvent(name: "inverted", value: "inverted", display: false)
-	sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [1], parameterNumber: 4, size: 1).format()))
+    sendEvent(name: "inverted", value: "inverted", display: false)
+    sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [1], parameterNumber: 4, size: 1).format()))
 }
 
 def notInverted() {
-	sendEvent(name: "inverted", value: "not inverted", display: false)
-	sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [0], parameterNumber: 4, size: 1).format()))
+    sendEvent(name: "inverted", value: "not inverted", display: false)
+    sendHubCommand(new hubitat.device.HubAction(zwave.configurationV2.configurationSet(configurationValue: [0], parameterNumber: 4, size: 1).format()))
 }
 
 def doubleUp() {
-	sendEvent(name: "pushed", value: 1, descriptionText: "Double-tap up (button 1) on $device.displayName", isStateChange: true, type: "digital")
+    sendEvent(name: "pushed", value: 1, descriptionText: "Double-tap up (button 1) on $device.displayName", isStateChange: true, type: "digital")
 }
 
 def doubleDown() {
-	sendEvent(name: "pushed", value: 2, descriptionText: "Double-tap down (button 2) on $device.displayName", isStateChange: true, type: "digital")
+    sendEvent(name: "pushed", value: 2, descriptionText: "Double-tap down (button 2) on $device.displayName", isStateChange: true, type: "digital")
 }
 
 def poll() {
-	def cmds = []
+    def cmds = []
     cmds << zwave.switchBinaryV1.switchBinaryGet().format()
-	if (getDataValue("MSR") == null) {
-		cmds << zwave.manufacturerSpecificV1.manufacturerSpecificGet().format()
-	}
-	delayBetween(cmds,500)
+    if (getDataValue("MSR") == null) {
+        cmds << zwave.manufacturerSpecificV1.manufacturerSpecificGet().format()
+    }
+    delayBetween(cmds, 500)
 }
 
 def refresh() {
-	def cmds = []
-	cmds << zwave.switchBinaryV1.switchBinaryGet().format()
+    def cmds = []
+    cmds << zwave.switchBinaryV1.switchBinaryGet().format()
     cmds << zwave.configurationV2.configurationGet(parameterNumber: 3).format()
     cmds << zwave.configurationV2.configurationGet(parameterNumber: 4).format()
     cmds << zwave.associationV2.associationGet(groupingIdentifier: 3).format()
-	if (getDataValue("MSR") == null) {
-		cmds << zwave.manufacturerSpecificV1.manufacturerSpecificGet().format()
-	}
-	delayBetween(cmds,500)
+    if (getDataValue("MSR") == null) {
+        cmds << zwave.manufacturerSpecificV1.manufacturerSpecificGet().format()
+    }
+    delayBetween(cmds, 500)
 }
 
 def on() {
-	delayBetween([
-		zwave.basicV1.basicSet(value: 0xFF).format(),
-		zwave.basicV1.basicGet().format()
-	], 100)
+    delayBetween([
+        zwave.basicV1.basicSet(value: 0xFF).format(),
+        zwave.basicV1.basicGet().format()
+    ], 100)
 }
 
 def off() {
-	delayBetween([
-		zwave.basicV1.basicSet(value: 0x00).format(),
-		zwave.basicV1.basicGet().format()
-	], 100)
+    delayBetween([
+        zwave.basicV1.basicSet(value: 0x00).format(),
+        zwave.basicV1.basicGet().format()
+    ], 100)
 }
 
 // Private Methods
@@ -316,17 +316,18 @@ private parseAssocGroupList(list, group) {
         def max = group == 2 ? 5 : 4
         def count = 0
 
-        nodeList.each { node ->
+        nodeList.each {
+        node ->
             node = node.trim()
-            if ( count >= max) {
+            if (count >= max) {
                 log.warn "Association Group ${group}: Number of members is greater than ${max}! The following member was discarded: ${node}"
             }
             else if (node.matches("\\p{XDigit}+")) {
-                def nodeId = Integer.parseInt(node,16)
+                def nodeId = Integer.parseInt(node, 16)
                 if (nodeId == zwaveHubNodeId) {
-                	log.warn "Association Group ${group}: Adding the hub as an association is not allowed (it would break double-tap)."
+                    log.warn "Association Group ${group}: Adding the hub as an association is not allowed (it would break double-tap)."
                 }
-                else if ( (nodeId > 0) & (nodeId < 256) ) {
+                else if ((nodeId > 0) & (nodeId < 256)) {
                     nodes << nodeId
                     count++
                 }
@@ -339,6 +340,6 @@ private parseAssocGroupList(list, group) {
             }
         }
     }
-    
+
     return nodes
 }
